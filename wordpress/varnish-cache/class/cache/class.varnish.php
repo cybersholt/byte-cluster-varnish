@@ -9,6 +9,34 @@
 class XLII_Cache_Varnish extends XLII_Cache_Instance
 {
 	/**
+	 * Returns wether the cache engine is availible on this server.
+	 * 
+	 * @return	bool
+	 */ 
+	public function availible()
+	{
+		if(!empty($_SERVER['HTTP_X_VARNISH']))
+		{
+			$valid = true;
+		}
+		
+		// -- byte always specifies the HTTP_X_VARNISH server var
+		else if(isset($_SERVER['BYTE_ACCOUNT']) || defined('CACHE_DEBUG') && CACHE_DEBUG)
+		{
+			$valid = false;
+		}
+		else
+		{
+			$valid = null;
+		}
+		
+		if(function_exists('apply_filters'))
+	 		return apply_filters('cache_varnish_availible', $valid);
+		else
+			return $valid;
+	}
+	
+	/**
 	 * Delete the page cache, inner helper method of @see delete.
 	 * 
 	 * @param	array $keys The key the cache attribute is referred by.
@@ -27,6 +55,27 @@ class XLII_Cache_Varnish extends XLII_Cache_Instance
 		}
 		
 		return $count;
+	}
+	
+	/**
+	 * Return the cache object referred by the given key, inner helper method of @see get.
+	 * 
+	 * @param	string $key The key the cache attribute is referred by.
+	 * @return	void|false
+	 */ 
+	protected function _get($key)
+	{
+		return false;
+	}
+	
+	/**
+	 * Return the label the engine is referred by
+	 * 
+	 * @return	string
+	 */ 
+	public function label()
+	{
+		return __('Varnish', 'xlii-cache');
 	}
 	
 	/**
@@ -91,35 +140,13 @@ class XLII_Cache_Varnish extends XLII_Cache_Instance
 	}
 	
 	/**
-	 * Return the cache object referred by the given key, inner helper method of @see get.
-	 * 
-	 * @param	string $key The key the cache attribute is referred by.
-	 * @return	void|false
-	 */ 
-	protected function _get($key)
-	{
-		return false;
-	}
-	
-	
-	/**
-	 * Returns wether the cache connection is valid
-	 * 
-	 * @return	bool
-	 */
-	public function isValid()
-	{
-		return !empty($_SERVER['HTTP_X_VARNISH']);
-	}
-	
-	/**
 	 * Store cache data under the given key, inner helper method of @see set.
 	 * 
 	 * @param	string $key The key the cache attribute is referred by.
 	 * @param	void $value The value to store within the cache.
 	 * @return	bool
 	 */ 
-	protected function _set($key, $value)
+	protected function _set($key, &$value)
 	{
 		return false;
 	}

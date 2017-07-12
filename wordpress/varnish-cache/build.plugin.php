@@ -1,19 +1,25 @@
 <?php
 /*
- * Plugin Name: Varnish Cache
- * Description: Append a generic varnish cache support to your WordPress domain.
+ * Plugin Name: Perfomance plugin
+ * Description: Adds a performance boost to your website using varnish or redis.
  * Author: 42functions
- * Version: 1.0
+ * Version: 1.4.3
  * Author URI: http://42functions.nl/
  */
 
+if(!defined('CACHE_PLUGIN_DIR'))
+	define('CACHE_PLUGIN_DIR', __DIR__);
+
+if(!defined('CACHE_DEBUG') && defined('ENV') && (stripos(ENV, 'acc') !== false || strpos(ENV, 'dev') !== false || strpos(ENV, 'test') !== false))
+	define('CACHE_DEBUG', true);
 
 
-require_once dirname(__FILE__) . '/build.methods.php';
+require_once CACHE_PLUGIN_DIR . '/build.methods.php';
 
-require_once dirname(__FILE__)  . '/class/pattern.singleton.php';
-require_once dirname(__FILE__)  . '/class/manager.module.php';
-require_once dirname(__FILE__)  . '/class/facade.cache.php';
+require_once CACHE_PLUGIN_DIR . '/class/pattern.singleton.php';
+require_once CACHE_PLUGIN_DIR . '/class/manager.api.php';
+require_once CACHE_PLUGIN_DIR . '/class/manager.module.php';
+require_once CACHE_PLUGIN_DIR . '/class/facade.cache.php';
 
 
-XLII_Cache_Manager::init();
+XLII_Cache_Manager::init()->setup();

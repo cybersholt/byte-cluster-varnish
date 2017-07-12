@@ -187,6 +187,9 @@ class XLII_Cache_Post_Observer extends XLII_Cache_Singleton
 		if(XLII_Cache_Manager::option('post.purge.global.posts') && get_post_type($post_id) == 'post')
 			$helper->getUrlsPostPage($urls, $post_id);
 		
+		if($append = XLII_Cache_Manager::option('post.additional'))
+			$urls = array_merge($urls, $append);
+		
 		$helper->getUrlsGlobal($urls);
 		
 		if(!$new)
@@ -257,6 +260,9 @@ class XLII_Cache_Post_Observer extends XLII_Cache_Singleton
 	 */
 	public function _observeModifications($post_id)
 	{
+		if(isset($this->_changes[$post_id]))
+			return;
+			
 		$this->_changes[$post_id] = array(
 			'permalink' => get_permalink($post_id),
 			'post_title' => get_post($post_id)->post_title
@@ -299,7 +305,7 @@ class XLII_Cache_Post_Observer extends XLII_Cache_Singleton
 		if(get_post_status($post_id) != 'publish')
 			return apply_filters('post_cache_flush', false, $post_id, 'post-not-public');
 		
-		if(XLII_Cache_Manager::option('post.purge.general.all'))
+		if(XLII_Cache_Manager::option('post.purge.global.all'))
 			return apply_filters('post_cache_flush', 2, $post_id, 'opt-based-flush');
 		
 		$post_type = get_post_type($post_id);

@@ -1,0 +1,100 @@
+/**
+ * @author Ferdy Perdaan
+ * @version 1.0
+ *
+ * Styling for the builder page
+ */
+.clearfix {
+  zoom: 1;
+}
+.clearfix:before,
+.clearfix:after {
+  content: "\0020";
+  display: block;
+  height: 0;
+  overflow: hidden;
+}
+.clearfix:after {
+  clear: both;
+}
+body.wp-admin .postbox .hndle {
+  zoom: 1;
+}
+body.wp-admin .postbox .hndle:before,
+body.wp-admin .postbox .hndle:after {
+  content: "\0020";
+  display: block;
+  height: 0;
+  overflow: hidden;
+}
+body.wp-admin .postbox .hndle:after {
+  clear: both;
+}
+body.wp-admin .postbox .hndle > .url-count {
+  float: right;
+}
+body.wp-admin .postbox .hndle > span {
+  float: left;
+}
+body.wp-admin .postbox .hndle .hndle .table-urls .column-statuscode {
+  width: 100px;
+}
+body.wp-admin .postbox .hndle .hndle .table-urls .column-load-time {
+  width: 100px;
+}
+body.wp-admin .progress-stat .action-continue {
+  display: block;
+}
+body.wp-admin .progress-stat .action-pause {
+  display: none;
+}
+body.wp-admin .progress-stat.state-running .action-continue {
+  display: none;
+}
+body.wp-admin .progress-stat.state-running .action-pause {
+  display: block;
+}
+body.wp-admin .slider-container {
+  text-align: center;
+  zoom: 1;
+}
+body.wp-admin .slider-container:before,
+body.wp-admin .slider-container:after {
+  content: "\0020";
+  display: block;
+  height: 0;
+  overflow: hidden;
+}
+body.wp-admin .slider-container:after {
+  clear: both;
+}
+body.wp-admin .slider-container input {
+  width: 100%;
+}
+body.wp-admin .slider-container .slider-value {
+  display: inline-block;
+}
+body.wp-admin .slider-container .slider-min {
+  float: left;
+}
+body.wp-admin .slider-container .slider-max {
+  float: right;
+}
+body.wp-admin .table-urls .state-error .column-path {
+  border-color: #aa0000;
+}
+body.wp-admin .table-urls .state-error .column-error strong {
+  color: #aa0000;
+}
+body.wp-admin .table-urls .state-no-cache .column-path {
+  border-color: #1e8cbe;
+}
+body.wp-admin .table-urls .state-no-cache .column-error strong {
+  color: #1e8cbe;
+}
+body.wp-admin .table-urls .column-path {
+  border-left: 3px solid transparent;
+}
+body.wp-admin .table-urls .column-response-time {
+  width: 60px;
+}

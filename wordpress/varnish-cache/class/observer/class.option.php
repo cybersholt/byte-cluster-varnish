@@ -66,7 +66,7 @@ class XLII_Cache_Option_Observer extends XLII_Cache_Singleton
 		else
 			$flush = in_array($option_name, $this->getBlacklist());
 	
-		if($flush = apply_filters('option_cache_flush', $flush, $option_name))
+		if(apply_filters('option_cache_flush', $flush, $option_name))
 		{
 			cache_flush();
 			

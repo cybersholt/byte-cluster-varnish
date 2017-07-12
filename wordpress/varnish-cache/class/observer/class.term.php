@@ -64,7 +64,7 @@ class XLII_Cache_Term_Observer extends XLII_Cache_Singleton
 			
 		if(in_array('permalink', $changes))
 		{
-			$search = get_term_link($term_id, $taxonomy);
+			$search = get_term_link(intval($term_id), $taxonomy);
 			$replace = $changes['previous']['permalink'];
 			
 			// -- we can replace the new permalinks with the old ones since the new onces haven't been cached yet
@@ -81,6 +81,7 @@ class XLII_Cache_Term_Observer extends XLII_Cache_Singleton
 		if(is_taxonomy_hierarchical($taxonomy))
 		{
 			$siblings = array();
+			$helper = new XLII_Cache_Url_Helper();
 			
 			if(XLII_Cache_Manager::option('term.purge.term.children'))
 				$siblings = array_merge($siblings, $this->_getTermChildren($term_id, $taxonomy));
@@ -88,9 +89,10 @@ class XLII_Cache_Term_Observer extends XLII_Cache_Singleton
 			if(XLII_Cache_Manager::option('term.purge.term.ancestors'))
 				$siblings = array_merge($siblings, $this->_getTermAncestors($term_id, $taxonomy));
 			
+		
 			foreach($siblings as $sibling)
 			{
-				$success = $helper->getUrlsTerm($urls, $sibling_id, $taxonomy);
+				$success = $helper->getUrlsTerm($urls, $sibling, $taxonomy);
 				
 				if($success == 2)
 					return $success;
@@ -220,6 +222,8 @@ class XLII_Cache_Term_Observer extends XLII_Cache_Singleton
 		if(XLII_Cache_Manager::option('term.purge.global.posts') && in_array('post', $post_types))
 			$helper->getUrlsPostPage($urls);
 				
+		if($append = XLII_Cache_Manager::option('term.additional'))
+			$urls = array_merge($urls, $append);
 					
 		$helper->getUrlsGlobal($urls)
 			   ->getUrlsTerm($urls, $term_id, $taxonomy);
@@ -238,6 +242,9 @@ class XLII_Cache_Term_Observer extends XLII_Cache_Singleton
 	{
 		$term = get_term($term_id, $taxonomy);
 		
+		if(!$term || isset($this->_changes[$term->term_taxonomy_id]))
+			return;
+			
 		$this->_changes[$term->term_taxonomy_id] = array(
 			'permalink' => get_term_link($term, $taxonomy),
 			'term_title' => $term->name,
@@ -266,7 +273,7 @@ class XLII_Cache_Term_Observer extends XLII_Cache_Singleton
 		if(!$tax->public)
 			return apply_filters('term_cache_flush', false, $taxonomy, $term_id, 'term-not-public');
 			
-		if(XLII_Cache_Manager::option('term.purge.general.all'))
+		if(XLII_Cache_Manager::option('term.purge.global.all'))
 			return apply_filters('term_cache_flush', 2, $taxonomy, $term_id, 'opt-based-flush');
 				
 		$changes = $changes === null ? $this->_getTermChanges($term_id, $taxonomy) : $changes;

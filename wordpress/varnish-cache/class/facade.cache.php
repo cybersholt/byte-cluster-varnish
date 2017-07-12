@@ -30,11 +30,12 @@ abstract class XLII_Cache
 	 * Delete the page cache.
 	 * 
 	 * @param	string|array $key The key the cache attribute is referred by.
+	 * @param	bool $force = false Indicate wether to force flush the specified key.
 	 * @return	bool
 	 */ 
-	static public function delete($key)
+	static public function delete($key, $force = false)
 	{
-		if(self::$_flush)
+		if(self::$_flush || $force)
 			return self::getInstance()->delete($key);
 			
 		if(self::$_queue !== true)
@@ -57,16 +58,19 @@ abstract class XLII_Cache
 	/**
 	 * Flush the entire cache.
 	 * 
+	 * @param	bool $force = false Indicate wether to force flush
 	 * @return	bool
 	 */ 
-	static public function flush()
+	static public function flush($force = false)
 	{
-		if(self::$_flush)
-			return self::getInstance()->flush();
+		// -- Cache has already been flushed succesfully
+		if(!$force && self::$_queue === true)
+			return true;
 		
-		self::$_queue = true;
+		if(!self::getInstance()->flush())
+			return false;
 		
-		return true;
+		return (self::$_queue = true);
 	}
 	
 	/**
@@ -81,8 +85,9 @@ abstract class XLII_Cache
 		
 		self::$_queue = array();	
 		
+		// Full flushing is executed directly, so return true if succesfull
 		if($flush === true)
-			return $obj->flush();
+			return true; 
 		
 		else 
 			return $obj->delete($flush);
@@ -95,11 +100,38 @@ abstract class XLII_Cache
 	 */
 	static public function getInstance()
 	{
-		// for now always use varnish
 		if(self::$_instance === null)
-			self::$_instance = XLII_Cache_Varnish::getInstance();
+		{
+			if(($class = XLII_Cache_Manager::option('engine.type')) && class_exists($class))
+				self::$_instance = call_user_func(array($class, 'getInstance'));
+			else
+				self::$_instance = XLII_Cache_Varnish::getInstance();
+		}
 		
 		return self::$_instance;
+	}
+	
+	/**
+	 * Return a listing of all cache engines
+	 * 
+	 * @param	enum $filter = 'all' Optional filter to narrow the engines down (all|availible).
+	 * @return	array
+	 */
+	static public function getEngines($filter = 'all')
+	{
+		$engines = array();
+		$engines = apply_filters('cache_engines', $engines);
+	
+		if($filter == 'availible' && (!defined('CACHE_DEBUG') || !CACHE_DEBUG))
+		{
+			foreach($engines as $key => $engine)
+			{
+				if($engine->availible() === false)
+					unset($engines[$key]);
+			}
+		}
+		
+		return $engines;
 	}
 	
 	/**
@@ -123,5 +155,19 @@ abstract class XLII_Cache
 		self::$_flush = defined('CACHE_QUEUE') && !CACHE_QUEUE;
 		
 		register_shutdown_function(array(__CLASS__, 'flushQueue'));
+	}
+	
+	/**
+	 * Returns wether the current cache is running on the specified engine
+	 * 
+	 * @param	enum $engine The engine to check for.
+	 * @return	bool
+	 */
+	static public function is($engine)
+	{
+		if($active = XLII_Cache_Manager::option('engine.type'))
+			return stripos($active, $engine) !== false;
+		else
+			return false;
 	}
 }

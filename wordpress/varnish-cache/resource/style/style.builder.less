@@ -1,0 +1,86 @@
+/**
+ * @author Ferdy Perdaan
+ * @version 1.0
+ *
+ * Styling for the builder page
+ */
+
+
+.clearfix {
+	zoom:1;
+	&:before, &:after {
+		content: "\0020"; 
+		display: block; 
+		height: 0; 
+		overflow: hidden; 
+	}
+	&:after {
+		clear: both;
+	}
+}
+
+body.wp-admin
+{
+	.postbox 
+	{		
+		.hndle 
+		{
+			.clearfix;
+			
+			> .url-count { float: right; }
+			> span { float: left; }
+		}
+		
+		.hndle 
+		.hndle 
+		
+		.table-urls
+		{
+			.column-statuscode { width: 100px; }
+			.column-load-time { width: 100px; }
+		}
+	}
+
+	.progress-stat
+	{
+		// -- State
+		&
+		{
+			.action-continue { display: block; }
+			.action-pause { display: none; }
+		}
+		
+		&.state-running
+		{
+			.action-continue { display: none; }
+			.action-pause { display: block; }
+		}
+	}
+
+	.slider-container {
+		text-align: center;
+		.clearfix;
+	
+		input { width: 100%; }
+		
+		.slider-value { display: inline-block; }
+		.slider-min { float: left; }
+		.slider-max { float: right; }
+	}
+	
+	.table-urls
+	{
+		.state ( @color ) {
+			.column-path { border-color: @color; }
+			.column-error strong { color: @color; }	
+		}
+		
+		// -- state color
+		.state-error { .state(#a00); }
+		.state-no-cache { .state(#1e8cbe); }
+		
+		// -- column definitions
+		.column-path { border-left: 3px solid transparent; }
+		.column-response-time { width: 60px; }
+	}
+}

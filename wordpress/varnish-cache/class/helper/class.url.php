@@ -5,6 +5,7 @@
  *
  * Helper class used to fetch the page urls.
  */
+
 class XLII_Cache_Url_Helper
 {	
     /**
@@ -559,10 +560,10 @@ class XLII_Cache_Url_Helper
 	 */
     public function getUrlsTerm(array &$urls, $term_id, $taxonomy) 
 	{
-		if(!$term = get_term($term_id, $taxonomy))
+		if(!($term = get_term($term_id, $taxonomy)) || is_wp_error($term))
 			return $this;
 		
-		$base = get_term_link($term->term_id, $term->taxonomy);
+		$base = get_term_link(intval($term->term_id), $term->taxonomy);
 		$base = $this->_stripBase($base);
 		
 		$count = get_option('posts_per_page');
@@ -600,7 +601,7 @@ class XLII_Cache_Url_Helper
 		{
 			if (get_option('permalink_structure')) 
 			{
-				$url  = get_term_link($term_id, $term->taxonomy);
+				$url  = get_term_link(intval($term_id), $term->taxonomy);
 				$url .= $type != get_default_feed() ? 'feed/' . $type : 'feed';
 
 				$urls[] = user_trailingslashit(trailingslashit($url), 'feed');

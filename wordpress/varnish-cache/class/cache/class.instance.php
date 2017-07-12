@@ -9,6 +9,13 @@
 abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 {
 	/**
+	 * Returns wether the cache engine is availible on this server.
+	 * 
+	 * @return	bool
+	 */ 
+	abstract public function availible();
+
+	/**
 	 * Delete the page cache.
 	 * 
 	 * @param	string $key The key the cache attribute is referred by.
@@ -16,9 +23,17 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	 */ 
 	public function delete($key)
 	{
-		set_time_limit(0);
-		
-		return $this->isValid() ? $this->_delete(array_map(array($this, '_key'), (array)$key)) : false;
+		if($this->isValid() === false)
+			return false;
+
+		else if(!$key = (array)$key)
+			return true;
+
+		else if(function_exists('apply_filters') && !$key = apply_filters('cache_flush', $key, $this))
+			return true;
+			
+		else 
+			return $this->_delete(array_map(array($this, '_key'), $key));
 	}
 	
 	/**
@@ -29,17 +44,6 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	 */ 
 	abstract protected function _delete(array $key);
 	
-	
-	/**
-	 * Flush the entire cache.
-	 * 
-	 * @return	bool
-	 */ 
-	public function flush()
-	{
-		return $this->delete(home_url('/.*'));
-	}
-	
 	/**
 	 * Returns wether this page exists within the cache.
 	 * 
@@ -48,7 +52,7 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	 */ 
 	public function exists($key)
 	{
-		return $this->isValid() ? $this->_exists($this->_key($key)) : false;
+		return $this->isValid() !== false ? $this->_exists($this->_key($key)) : false;
 	}
 	
 	/**
@@ -61,10 +65,23 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	{
 		global $wpdb;
 		
-		if(isset($wpdb->cache_log))
+		if(!empty($wpdb) && isset($wpdb->cache_log))
 			return $wpdb->get_var($wpdb->prepare('SELECT COUNT(1) FROM ' . $wpdb->cache_log . ' WHERE url = %s', $key)) > 0;
 		else
 			return null;
+	}
+	
+	/**
+	 * Flush the entire cache.
+	 * 
+	 * @return	bool
+	 */ 
+	public function flush()
+	{
+		$success = function_exists('apply_filters') ? apply_filters('cache_flush_all', null, $this) : null;
+		$success = $success === null ? $this->delete(home_url('/.*')) : $success;
+		
+		return $success;
 	}
 	
 	/**
@@ -75,7 +92,7 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	 */ 
 	public function get($key)
 	{
-		return $this->isValid() ? $this->_get($this->_key($key)) : false;
+		return $this->isValid() !== false ? $this->_get($this->_key($key)) : false;
 	}
 	
 	/**
@@ -94,7 +111,7 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	 */
 	protected function _key($key)
 	{
-		return str_replace('https', 'http', $key);
+		return XLII_Cache_Manager::option('general.https_indifferent', true) ? str_replace('https', 'http', $key) : $key;
 	}
 	
 	/**
@@ -102,7 +119,49 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	 * 
 	 * @return	bool
 	 */
-	abstract public function isValid();
+	public function isValid()
+	{
+		return $this->availible();
+	}
+	
+	/**
+	 * Return the label the engine is referred by
+	 * 
+	 * @return	string
+	 */ 
+	abstract public function label();
+	
+	/**
+	 * Regsiter the caching module.
+	 */
+	static public function register()
+	{	
+		$class = get_called_class();
+		
+		add_filter('cache_engines', array($class, '_register'));
+		
+		if(method_exists($class, '_configurationRender'))
+		{
+			add_action('cache_configuration_engine_form', array($class, '_configurationRender'));
+			add_filter('cache_form_process_engine_' . $class, array($class, '_configurationProcess'));
+		}
+	}
+	
+	/**
+	 * Register the cache object as a possible engine
+	 * 
+	 * @param	array $engines An array containing the availible cache engines
+	 * @return	array
+	 */
+	static public function _register(array $engines)
+	{
+		$class = get_called_class();
+		$class = new $class;
+		
+		$engines[] = $class;
+		
+		return $engines;
+	}
 	
 	/**
 	 * Store cache data under the given key.
@@ -113,7 +172,7 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	 */ 
 	public function set($key, $value)
 	{
-		return $this->isValid() ? $this->_set($this->_key($key), $value) : false;
+		return $this->isValid() !== false ? $this->_set($this->_key($key), $value) : false;
 	}
 	
 	/**
@@ -123,5 +182,5 @@ abstract class XLII_Cache_Instance extends XLII_Cache_Singleton
 	 * @param	void $value The value to store within the cache.
 	 * @return	bool
 	 */ 
-	abstract protected function _set($key, $value);
+	abstract protected function _set($key, &$value);
 }
