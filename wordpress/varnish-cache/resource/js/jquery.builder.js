@@ -465,10 +465,14 @@
 	// -- Init module
 	$(function()
 	{
-		var dashboard = new Dashboard('.progress-stat')
+		var dashboard = new Dashboard('#submitdiv')
 		
 		$('#postbox-container').find('.table-urls').each(function() {
 			new URLrequest(this, dashboard)
+		})
+	
+		$('.slider-container input').on('change input', function(){
+			$(this).parents('.slider-container').find('.slider-value').text($(this).val())
 		})
 	})
 	

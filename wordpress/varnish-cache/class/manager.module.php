@@ -15,9 +15,6 @@ class XLII_Cache_Manager extends XLII_Cache_Singleton
 	
 	const DEFAULT_EXPIRATION = 2592000; // 30 days
 	
-	private $error;
-	private $notice;
-	
 	private $_statuscode = 200;
 	
 	/**
@@ -43,7 +40,13 @@ class XLII_Cache_Manager extends XLII_Cache_Singleton
 		if($file = str_replace('xlii_cache', '', strtolower($class)))
 		{
 			$file = explode('_', trim($file, '_'));
-			$file = count($file) == 2 ? $file[1] . '/class.' . $file[0] . '.php' : 'cache/class.' . $file[0] . '.php';
+			
+			if(count($file) == 3)
+				$file = $file[2] . '/' . $file[0] . '/class.' . $file[1] . '.php';
+			else if(count($file) == 2)
+				$file = $file[1] . '/class.' . $file[0] . '.php';
+			else
+				$file = 'cache/class.' . $file[0] . '.php';
 		}
 		else
 		{
@@ -104,405 +107,6 @@ class XLII_Cache_Manager extends XLII_Cache_Singleton
 		}
 		
 		update_option(self::OPTION_NAME . '_' . $user, $queue);
-	}
-	
-	/**
-	 * Register the admin bar.
-	 * 
-	 * @access	private
-	 * @param	WP_Admin_Bar $admin_bar The generated admin bar.
-	 */
-	public function _adminbar(WP_Admin_Bar $admin_bar)
-	{
-		if(!current_user_can(self::REQUIRED_CAP))
-			return;
-		
-		$valid = XLII_Cache::isValid() !== false || defined('CACHE_DEBUG') && CACHE_DEBUG;
-		
-		// -- Add primary node
-		if($valid)
-		{
-			$title = __('Cache', 'xlii-cache');
-			
-			// -- Track auto flushing
-			$queue = XLII_Cache::getQueue();
-			$queue = !$queue ? get_option(self::OPTION_NAME . '_' . wp_get_current_user()->ID) : $queue;
-	
-			if($queue)
-			{
-				if(is_array($queue) && count($queue))
-				{
-					$admin_bar->add_menu( array( 
-						'id' => 'varnish-cache-flushed',
-						'parent' => 'varnish-cache',
-						'title' => __('Flushed pages', 'xlii-cache')
-					));
-				
-					asort($queue);
-				
-					foreach($queue as $i => $key)
-					{
-						$label = apply_filters('cache_label_flushed', str_replace(home_url(''), '', $key));
-						$label = !$label || $label == '/' ? __('Home', 'theme') : $label;
-						$label = substr($label, 0, 37) . (strlen($label) > 40 ? '...' : '');
-						
-						$admin_bar->add_menu( array( 
-							'id' => 'varnish-cache-flushed-' . $i,
-							'parent' => 'varnish-cache-flushed',
-							'title' => $label,
-							'href' => $key
-						));
-					}	
-				
-					$title = __('Flushed', 'xlii-cache') . ' <span style = "font-size:0.8em;">(' . count($queue) . ')</span>';
-				}
-				else if($queue)
-				{
-					$title = __('Flushed', 'xlii-cache') . ' <span style = "font-size:0.8em;">(' . __('all', 'xlii-cache') . ')</span>';
-				}
-				
-				delete_option(self::OPTION_NAME . '_' . wp_get_current_user()->ID);
-			}
-		
-			$admin_bar->add_menu( array( 
-				'id' => 'varnish-cache',
-				'title' => $title
-			));
-		}
-		else
-		{
-			$admin_bar->add_menu( array( 
-				'id' => 'varnish-cache',
-				'title' => __('Unable to decect cache', 'xlii-cache')
-			));	
-		}
-
-		// -- Build support
-		
-		if(is_network_admin())
-		{
-			$this->_adminbarNetwork($admin_bar);
-		}
-		else
-		{
-			$context = $this->_adminbarFlush($admin_bar);
-			
-			$this->_adminbarBuild($admin_bar, $context);
-						
-			// -- Add configuration node
-			$url = admin_url('options-general.php');
-			$url = add_query_arg('page', 'cache-config', $url);
-		
-			$admin_bar->add_menu( array( 
-				'id' => 'varnish-cache-config',
-				'parent' => 'varnish-cache',
-				'title' => __('Configuration', 'xlii-cache'),
-				'href' => $url
-			));
-		}
-		
-		
-		
-	}
-
-	/**
-	 * Register the build pages in the admin bar.
-	 * 
-	 * @access	private
-	 * @param	WP_Admin_Bar $admin_bar The generated admin bar.
-	 * @param	enum $context = nulll Contexutal action url that might have been set.
-	 */
-	protected function _adminbarBuild(WP_Admin_Bar $admin_bar, $context = null)
-	{
-		$url = admin_url('options-general.php');
-		$url = add_query_arg('page', 'cache-builder', $url);
-	
-		$admin_bar->add_menu( array( 
-			'id' => 'varnish-cache-builder',
-			'parent' => 'varnish-cache',
-			'title' => __('Build blog cache', 'xlii-cache'),
-			'href' => $url
-		));
-		
-		if(!empty($context))
-		{					
-			// extract context from action
-			$context = explode('?', $context, 2);
-			parse_str($context[1], $context);
-			
-			$admin_bar->add_menu( array( 
-				'id' => 'varnish-cache-build-object',
-				'parent' => 'varnish-cache',
-				'href' => add_query_arg('context', $context['object'] . '-' . $context['object_id'], $url),
-				'title' => __('Build object cache', 'xlii-cache')
-			));
-		}
-		
-	}
-	
-	/**
-	 * Register the flush pages in the admin bar.
-	 * 
-	 * @access	private
-	 * @param	WP_Admin_Bar $admin_bar The generated admin bar.
-	 * @return	string
-	 */
-	protected function _adminbarFlush(WP_Admin_Bar $admin_bar)
-	{
-		$url = set_url_scheme( (is_ssl() ? 'https' : 'http' ) . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
-		$url = add_query_arg('redirect', urlencode($url), admin_url('admin-ajax.php'));
-		
-		// -- Blog cache
-		$admin_bar->add_menu( array( 
-			'id' => 'varnish-cache-flush-blog',
-			'parent' => 'varnish-cache',
-			'href' => add_query_arg('action', 'cache-flush-blog', $url),
-			'title' => __('Flush blog cache', 'xlii-cache') 
-		));
-		
-		// -- Singular cache
-		if(is_admin()) 
-		{
-			global $tag, $user_id;
-		
-			$current_screen = get_current_screen();
-			$post = get_post();
-
-			if ($current_screen->base == 'post')
-				$object = $post;
-			
-			else if($current_screen->base == 'edit-tags' && !empty($tag))
-				$object = $tag;
-				
-			else if($current_screen->base == 'user-edit' && !empty($user_id))
-				$object = get_user_by('id', $user_id);
-				
-		} 
-		else 
-		{
-			$object = $GLOBALS['wp_the_query']->get_queried_object();
-			
-			if(!is_404())
-			{
-				$admin_bar->add_menu( array( 
-					'id' => 'varnish-cache-flush-page',
-					'parent' => 'varnish-cache',
-					'href' => add_query_arg('action', 'cache-flush-page', $url),
-					'title' => __('Flush page cache', 'xlii-cache') 
-				));
-			}
-		}
-
-		if(!empty($object))
-		{
-			if(!empty($object->post_type) && ($pt = get_post_type_object($object->post_type)) && $pt->public)
-			{
-				if(XLII_Cache_Manager::option('post.enabled'))
-					$action = add_query_arg(array('object' => 'post', 'object_id' => $object->ID), $url);
-			} 
-			else if (!empty($object->taxonomy) && ($tax = get_taxonomy($object->taxonomy)) && $tax->public)
-			{
-				if(XLII_Cache_Manager::option('term.enabled'))
-					$action = add_query_arg(array('object' => 'term', 'object_id' => $object->term_taxonomy_id), $url);
-			}
-			else if(is_a($object, 'WP_User'))
-			{
-				if(XLII_Cache_Manager::option('user.enabled'))
-					$action = add_query_arg(array('object' => 'user', 'object_id' => $object->ID), $url);
-			}
-			
-			if(!empty($action))
-			{
-				$admin_bar->add_menu( array( 
-					'id' => 'varnish-cache-flush-object',
-					'parent' => 'varnish-cache',
-					'href' => add_query_arg('action', 'cache-flush-object', $action),
-					'title' => __('Flush object cache', 'xlii-cache')
-				));
-			}
-		}
-		
-		return empty($action) ? false : $action;
-	}
-	
-	/**
-	 * Register the flush network in the admin bar.
-	 * 
-	 * @access	private
-	 * @param	WP_Admin_Bar $admin_bar The generated admin bar.
-	 */
-	protected function _adminbarNetwork(WP_Admin_Bar $admin_bar)
-	{
-		$url = set_url_scheme( (is_ssl() ? 'https' : 'http' ) . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
-		$url = add_query_arg('redirect', urlencode($url), admin_url('admin-ajax.php'));
-		
-		// -- Blog cache
-		$admin_bar->add_menu( array( 
-			'id' => 'varnish-cache-flush-network',
-			'parent' => 'varnish-cache',
-			'href' => add_query_arg('action', 'cache-flush-network', $url),
-			'title' => __('Flush network cache', 'xlii-cache') 
-		));
-	}
-
-	/**
-	 * Register our custom admin menu
-	 * 
-	 * @access	private
-	 */
-	public function _adminmenu()
-	{
-		$hook = add_submenu_page('options-general.php', __('Cache', 'xlii-cache'), __('Cache', 'xlii-cache'), self::REQUIRED_CAP, 'cache-config', array($this, '_adminPage'));
-	
-		add_action('load-' . $hook, array($this, '_adminProcess'));
-		
-		add_submenu_page(null, __('Cache', 'xlii-cache'), __('Cache', 'xlii-cache'), self::REQUIRED_CAP, 'cache-builder', array($this, '_adminPage'));
-	}
-	
-	/**
-	 * Render our custom admin page
-	 * 
-	 * @access	private
-	 */
-	public function _adminPage()
-	{		
-		// Render notice
-		if($error = $this->error)
-		{	
-			$this->notice = is_array($error) ? implode('<br />', array_unique($error)) : $error;
-			$this->notice = '<div class = "error"><p>' . $this->notice . '</p></div>';
-		}
-		
-		if($note = $this->notice)
-			echo $note[0] != '<' ? '<div class = "updated"><p>' . $note . '</p></div>' : $note;
-		
-		if($this->_getAdminPage() == 'builder')
-			require_once CACHE_PLUGIN_DIR . '/resource/view.builder.phtml';
-		else
-			require_once CACHE_PLUGIN_DIR . '/resource/view.configuration.phtml';
-	}
-	
-	/**
-	 * Process our admin configuration page.
-	 * 
-	 * @access	private
-	 */
-	public function _adminProcess()
-	{
-		if(empty($_POST['submit']))
-			return;
-			
-		$data = array();
-
-		// Process engine information
-		{
-			$class = !empty($_POST['engine']) && is_array($_POST['engine']) && !empty($_POST['engine']['type']) ? $_POST['engine']['type'] : false;
-			$class = $class && class_exists($class) && is_subclass_of($class, 'XLII_Cache_Instance') ? $class : 'XLII_Cache_Varnish';
-			
-			$data['engine'] = array('type' => $class);
-			
-			$data['engine'] = apply_filters('cache_form_process_engine_' . $class, $data['engine']);
-			$data['engine'] = apply_filters('cache_form_process_engine', $data['engine']);
-		}
-		
-		// Process general data
-		if(isset($_POST['general']) && is_array($_POST['general']))
-		{
-			$data['general'] = array();
-			
-			if(!empty($_POST['general']['flushing']))
-			{	
-				$data['general']['flushing'] = intval($_POST['general']['flushing']);
-				$data['general']['flushing'] = $data['general']['flushing'] > 0 ? $data['general']['flushing'] : 0;
-			}
-				
-			if(!empty($_POST['general']['pagination']))
-				$data['general']['pagination'] = intval($_POST['general']['pagination']);
-				
-			if(!empty($_POST['general']['expire']) && intval($_POST['general']['expire']) >= 0)
-				$data['general']['expire'] = intval($_POST['general']['expire']);
-				
-			$data['general']['https_indifferent'] = isset($_POST['general']['https_indifferent']);
-		}
-		
-		// Process option data
-		if(isset($_POST['options']) && is_array($_POST['options']))
-		{
-			$data['options'] = array();
-			
-			foreach(array('additional', 'cookies', 'exclude') as $field)
-			{
-				if(!empty($_POST['options'][$field]))
-				{
-					$data['options'][$field] = preg_split('/(,|\n|\r)/', $_POST['options'][$field]);
-					$data['options'][$field] = array_map('trim', $data['options'][$field]);
-					$data['options'][$field] = array_map('sanitize_text_field', $data['options'][$field]);
-					$data['options'][$field] = array_filter($data['options'][$field]);
-				}
-			}
-
-			$data['options']['statuscode'] = isset($_POST['options']['statuscode']) ? intval($_POST['options']['statuscode']) : false;
-			$data['options']['revalidate'] = !empty($_POST['options']['revalidate']);
-			$data['options']['compress-html'] = !empty($_POST['options']['compress-html']);
-		}
-		
-		// Process generic purge policy
-		foreach(array('term', 'post', 'user') as $key)
-		{
-			$data[$key] = array(
-				'purge' => array(),
-				'feed' => array()
-			);
-			
-			if(!isset($_POST[$key]) || !is_array($_POST[$key]))
-				continue;
-			
-			$data[$key]['enabled'] = !empty($_POST[$key]['enabled']);
-			
-			if(isset($_POST[$key]['feed']))
-			{
-				$data[$key]['feed'] = (array)$_POST[$key]['feed'];
-				$data[$key]['feed'] = array_map('sanitize_text_field', $data[$key]['feed']);
-			}
-			
-			if(!empty($_POST[$key]['additional']))
-			{
-				$data[$key]['additional'] = preg_split('/(\n|\r)/', $_POST[$key]['additional']);
-				$data[$key]['additional'] = array_map('trim', $data[$key]['additional']);
-				$data[$key]['additional'] = array_filter($data[$key]['additional']);
-			}
-			
-			if(isset($_POST[$key]['purge']))
-			{
-				$data[$key]['purge'] = (array)$_POST[$key]['purge'];
-				
-				$this->_processPurge($data[$key]['purge']);
-			}
-		}
-		
-		// Process comment purge policy
-		$data['comment'] = array(
-			'enabled' => false,
-			'type' => array()
-		);
-	
-		if(isset($_POST['comment']) && is_array($_POST['comment']))
-		{
-			$data['comment']['enabled'] = !empty($_POST['comment']['enabled']);
-			
-			if(isset($_POST['comment']['type']))
-			{
-				$data['comment']['type'] = (array)$_POST['comment']['type'];
-				$data['comment']['type'] = array_map('sanitize_title', $data['comment']['type']);
-			}
-		}
-	
-		// -- update etag timestamp
-		$data['etag'] = time();
-	
-		update_option(self::OPTION_NAME, apply_filters('cache_form_process', $data, $this));
-		
-		$this->notice = __('Settings saved', 'xlii-cache');
 	}
 	
 	/**
@@ -669,24 +273,6 @@ class XLII_Cache_Manager extends XLII_Cache_Singleton
 	}
 	
 	/**
-	 * Return the currently active admin page
-	 * 
-	 * @return	string
-	 */
-	protected function _getAdminPage()
-	{
-		if(!empty($_REQUEST['page']))
-		{
-			$page = sanitize_title($_REQUEST['page']);
-			$page = str_replace(array('varnish-', 'cache-'), '', $page);
-			
-			return $page;
-		}
-		
-		return 'configuration';
-	}
-	
-	/**
 	 * Return the page status code.
 	 * 
 	 * @return	int
@@ -694,53 +280,6 @@ class XLII_Cache_Manager extends XLII_Cache_Singleton
 	public function getStatuscode()
 	{
 		return $this->_statuscode;
-	}
-	
-	/**
-	 * Process the purging data
-	 * 
-	 * @param	array &$data The data object to cleanup.
-	 */
-	protected function _processPurge(array &$data)
-	{
-		foreach($data as &$val)
-		{
-			if(is_array($val))
-				$this->_processPurge($val);
-			else
-				$val = (bool)$val;
-		}
-	}
-	
-	/**
-	 * Return the header of the metabox
-	 * 
-	 * @param	string $title The title to display in the metabox.
-	 * @return	string
-	 */
-	public function metaboxHeader($title, $id  = null)
-	{
-		$title = $title[0] == '<' ? $title : '<span>' . $title . '</span>';
-		
-		return '<div class="postbox"' . ($id ? ' id="' . $id . '"' : '') .'>' .	
-					'<div class="handlediv" title="' . __('Click to toggle', 'xlii-cache') . '"><br /></div>' .
-					'<h3 class="hndle">' . $title . '</h3>' .
-					'<div class="inside">';
-	}
-	
-	/**
-	 * Return the footer of the metabox
-	 * 
-	 * @return	string
-	 */
-	public function metaboxFooter()
-	{
-		
-        return 			// '<p>' .
-        //             				'<input type="submit" name="submit" class="button-primary" value="' . __('Save', 'xlii-cache') . '" />' .
-        // 						'</p>' .
-					'</div>' .
-			  	'</div>';
 	}
 	
 	/**
@@ -841,6 +380,7 @@ class XLII_Cache_Manager extends XLII_Cache_Singleton
 	public function setup()
 	{
 		register_shutdown_function(array($this, '__shutdown'));
+		
 		register_activation_hook(CACHE_PLUGIN_DIR . '/build.plugin.php', array($this, '__activate'));
 		register_deactivation_hook(CACHE_PLUGIN_DIR . '/build.plugin.php', array($this, '__deactivate'));
 		
@@ -866,19 +406,30 @@ class XLII_Cache_Manager extends XLII_Cache_Singleton
 		add_filter('cache_flush_all', array($this, '_updateEtag'));
 		add_action('update_option_' . self::OPTION_NAME, array($this, '_writeConfig'), 100, 2);
 		
-		// -- Regsiter admin page
-		add_action('admin_bar_menu', array($this, '_adminbar'), 110);
-		add_action('admin_menu', array($this, '_adminmenu'));
-		
 		// -- Register helper
-		
-		// Experimental module, disabled in public branche
-		//add_action('plugins_loaded', array('XLII_Cache_WPML_Helper', 'init'));
+		add_action('plugins_loaded', array('XLII_Cache_WPML_Helper', 'init'));
+		add_action('init', array($this, '_setupAdmin'));
 		
 		// -- Register cache extensions
 		XLII_Cache_Redis::register();
 		XLII_Cache_File::register();
 		XLII_Cache_Varnish::register();
+	}
+	
+	/**
+	 * Only setup the admin section if user is logged in
+	 * 
+	 * @access	private
+	 */
+	public function _setupAdmin()
+	{
+		// Register admin (also extended frontend so always init in case user is logged in)
+		if(!is_user_logged_in())
+			return;
+			
+		XLII_Cache_Admin_Menubar::init();
+		XLII_Cache_Admin_Configuration::init();
+		XLII_Cache_Admin_Warmer::init();
 	}
 	
 	/**

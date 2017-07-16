@@ -1,7 +1,7 @@
 === Varnish Cache ===
 Contributors: 42functions, Byte
 Tags: varnish, cache, redis
-Tested up to: 4.5.2
+Tested up to: 4.8.0
 Stable tag: 1.4.3
 
 Varnish cache is a powerful extension which acts as a communication layer between Varnish and WordPress.
@@ -33,9 +33,15 @@ The following functionality is currently in the pipeline
 
 == Changelog ==
 
+= 1.4.4 =
+
+* Modified: Restructured admin page setups
+* Added: Additional user documentation
+* Added: TOS for cache warmer
+
 = 1.4.3 =
 
-* Added: Added difference for HTTPS neglecting
+* Added: Added patch for HTTPS neglecting
 
 = 1.4.2 =
 
@@ -89,6 +95,7 @@ The following functionality is currently in the pipeline
 = 1.2.1 =
 
 * Fix: Prevented fatal error in term sibling loop
+* Fix: Prevented fatal error in flush all (WPML)
 * Fix: Repaired configuration mismatch for general policy flush
 
 = 1.2.0 =
@@ -97,6 +104,7 @@ The following functionality is currently in the pipeline
 * New: Added 'cache_flush_all' filter, parameter: (bool)success, cache instance
 * New: Added 'cache_form_display' action, parameter: Module
 * New: Added 'cache_form_process' filter, parameter: data, Module
+* New: Added experimental support for WPML (v 3.1.8.4)
 
 = 1.1.0 =
 

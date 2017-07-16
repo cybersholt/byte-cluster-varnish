@@ -21,5 +21,10 @@ require_once CACHE_PLUGIN_DIR . '/class/manager.api.php';
 require_once CACHE_PLUGIN_DIR . '/class/manager.module.php';
 require_once CACHE_PLUGIN_DIR . '/class/facade.cache.php';
 
+require_once CACHE_PLUGIN_DIR . '/class/admin/admin.menubar.php';
+require_once CACHE_PLUGIN_DIR . '/class/admin/admin.configuration.php';
+require_once CACHE_PLUGIN_DIR . '/class/admin/admin.warmer.php';
+
 
 XLII_Cache_Manager::init()->setup();
+

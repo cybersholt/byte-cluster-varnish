@@ -72,6 +72,12 @@ class XLII_Cache_File extends XLII_Cache_Instance
 					<input type = "text" name = "filesystem[dir]" class = "widefat" id = "filesystem-dir" value = "<?php echo esc_attr(XLII_Cache_Manager::option('engine.filesystem.dir')); ?>" placeholder="<?php echo self::getDefaultDir(); ?>" />
 				</td>
 			</tr>
+			<tr>
+				<th><?php _e('Pre load', 'xlii-cache'); ?></th>
+				<td>
+					<?php self::_configurationPreload(); ?>
+				</td>
+			</tr>
 		</table>
 		<?php
 		

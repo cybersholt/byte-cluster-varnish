@@ -17,45 +17,43 @@
 .clearfix:after {
   clear: both;
 }
-body.wp-admin .postbox .hndle {
-  zoom: 1;
+.notice .emp {
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #a00;
 }
-body.wp-admin .postbox .hndle:before,
-body.wp-admin .postbox .hndle:after {
-  content: "\0020";
-  display: block;
-  height: 0;
-  overflow: hidden;
+.notice ul {
+  list-style: disc;
 }
-body.wp-admin .postbox .hndle:after {
-  clear: both;
+.notice ul li {
+  margin-left: 20px;
 }
-body.wp-admin .postbox .hndle > .url-count {
+body.wp-admin .postbox .hndle > span > .url-count {
   float: right;
 }
-body.wp-admin .postbox .hndle > span {
-  float: left;
-}
-body.wp-admin .postbox .hndle .hndle .table-urls .column-statuscode {
+body.wp-admin .postbox .table-urls .column-statuscode {
   width: 100px;
 }
-body.wp-admin .postbox .hndle .hndle .table-urls .column-load-time {
+body.wp-admin .postbox .table-urls .column-load-time {
   width: 100px;
 }
-body.wp-admin .progress-stat .action-continue {
+body.wp-admin .postbox[id^="warmer-object"] .inside {
+  margin: -1px !important;
+  padding: 0px;
+}
+body.wp-admin #submitdiv .action-continue {
   display: block;
 }
-body.wp-admin .progress-stat .action-pause {
+body.wp-admin #submitdiv .action-pause {
   display: none;
 }
-body.wp-admin .progress-stat.state-running .action-continue {
+body.wp-admin #submitdiv.state-running .action-continue {
   display: none;
 }
-body.wp-admin .progress-stat.state-running .action-pause {
+body.wp-admin #submitdiv.state-running .action-pause {
   display: block;
 }
 body.wp-admin .slider-container {
-  text-align: center;
   zoom: 1;
 }
 body.wp-admin .slider-container:before,
@@ -70,6 +68,34 @@ body.wp-admin .slider-container:after {
 }
 body.wp-admin .slider-container input {
   width: 100%;
+  -webkit-appearance: none;
+}
+body.wp-admin .slider-container input[type=range]::-webkit-slider-runnable-track {
+  height: 5px;
+  background: #ddd;
+  border: none;
+  border-radius: 3px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+body.wp-admin .slider-container input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #0073aa;
+  margin-top: -6px;
+  margin-left: -4px;
+}
+body.wp-admin .slider-container input[type=range]:focus {
+  outline: none;
+}
+body.wp-admin .slider-container input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #ccc;
+}
+body.wp-admin .slider-container .slider-range {
+  text-align: center;
 }
 body.wp-admin .slider-container .slider-value {
   display: inline-block;
@@ -81,10 +107,10 @@ body.wp-admin .slider-container .slider-max {
   float: right;
 }
 body.wp-admin .table-urls .state-error .column-path {
-  border-color: #aa0000;
+  border-color: #a00;
 }
 body.wp-admin .table-urls .state-error .column-error strong {
-  color: #aa0000;
+  color: #a00;
 }
 body.wp-admin .table-urls .state-no-cache .column-path {
   border-color: #1e8cbe;

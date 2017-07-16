@@ -126,6 +126,10 @@ class XLII_Cache_Redis extends XLII_Cache_Instance
 		$path = str_replace(ABSPATH, '', CACHE_PLUGIN_DIR . '/pre-load/cache.generic.php');
 		
 		?>
+		<input type="text" name="prevent_autofill" id="prevent_autofill" value="" style="display:none;" />
+		<input type="password" name="password_fake" id="password_fake" value="" style="display:none;" />
+
+		
 		<table class="form-table engine-section engine-<?php echo __CLASS__  ?>">
 			<tr>
 				<th>
@@ -154,42 +158,9 @@ class XLII_Cache_Redis extends XLII_Cache_Instance
 			<tr>
 				<th><?php _e('Pre load', 'xlii-cache'); ?></th>
 				<td>
-					<?php _e('In order for this cache engine to work you have to insert <strong>one</strong> of the pre-loading script', 'xlii-cache'); ?>
-					
-					<div class = "code-sample">
-						<ul class = "tab-nav">
-							<li><a href = "#htaccess">.htaccess</a></li>
-							<li><a href = "#wp-config">wp-config.php</a></li>
-						</ul>
-	
-						<code class = "htaccess">
-							<div class = "comment">
-							# <?php echo __('Add this code to the bottom of your .htaccess file', 'xlii-cache'); ?><br />
-							# <?php echo __('Location', 'xlii-cache') . ': ' . get_home_path() . '.htaccess'; ?><br /><br />
-							</div>
-							
-							<div class = "comment"># BEGIN Cache<br /></div>
-							php_value auto_prepend_file "<?php echo ABSPATH . $path; ?>"<br />
-							<div class = "comment"># END Cache<br /></div>
-						</code>
-						
-						<code class = "wp-config">
-							<div class = "comment">
-							// <?php echo __('Add this line right after the PHP brackets open in your PHP wp-config.php file', 'xlii-cache'); ?><br />
-							// <?php echo __('Location', 'xlii-cache') . ': ' . ABSPATH . 'wp-config.php'; ?><br /><br />
-							</div>
-							
-							if(file_exists(__DIR__ . '/<?php echo $path; ?>'))<br />
-							&nbsp; &nbsp; require_once __DIR__ . '/<?php echo $path; ?>';
-						</code>
-					</div>
-					<?php 
-					if(defined('CACHE_PRE_LOADED') && CACHE_PRE_LOADED)
-						echo '<p class = "description"><small>' . sprintf(__('Pre loader %sdetected%s', 'xlii-cache'), '<strong style = "color:green;">', '</strong>') . '</small></p>';
-					else
-						echo '<p class = "description"><small>' . sprintf(__('Pre loader %snot detected%s', 'xlii-cache'), '<strong style = "color:#a00;">', '</strong>') . '</small></p>';
-					?>
+					<?php self::_configurationPreload(); ?>
 				</td>
+			</tr>
 		</table>
 		<?php
 	}
